@@ -60,5 +60,5 @@ java -cp "lib/*;src" pack.TaxiFinalApp
 ## 📄 License
 This project was developed for academic purposes. Feel free to use and modify it for your own learning!
 
----
-*Created with ❤️ by Antigravity AI*
+
+Created By Ertan

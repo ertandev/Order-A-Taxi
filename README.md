@@ -1,4 +1,4 @@
-# Order A Taxi (OrderAtaxi v2)
+# Order A Taxi 
 
 Order A Taxi is a premium, feature-rich desktop taxi booking application built with **Java Swing** and **SQLite**. It offers a seamless experience for passengers to book rides, drivers to manage their income, and admins to oversee the entire system.
 

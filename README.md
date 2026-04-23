@@ -38,7 +38,7 @@ Order A Taxi is a premium, feature-rich desktop taxi booking application built w
 ### Steps
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/OrderAtaxi.git
+   git clone https://github.com/ertandev/Order-A-Taxi.git
    ```
 2. Ensure the following JARs are in your classpath:
    - `sqlite-jdbc-3.45.3.0.jar`

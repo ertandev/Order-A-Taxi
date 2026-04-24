@@ -14,6 +14,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Vector;
 import java.util.Date;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.awt.Taskbar;
 
 // --- LIBRARY IMPORT ---
 import com.toedter.calendar.JDateChooser;
@@ -75,11 +78,24 @@ public class TaxiFinalApp extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        // App Icon
+        // App Icon & macOS Dock Icon
         try {
-            ImageIcon icon = new ImageIcon("resources/logo.png");
-            setIconImage(icon.getImage());
+            File logoFile = new File("resources/logo.png");
+            if (!logoFile.exists()) logoFile = new File("logo.png");
+            if (logoFile.exists()) {
+                BufferedImage bimg = ImageIO.read(logoFile);
+                setIconImage(bimg);
+                
+                // Set Dock icon for macOS
+                if (Taskbar.isTaskbarSupported()) {
+                    Taskbar taskbar = Taskbar.getTaskbar();
+                    if (taskbar.isSupported(Taskbar.Feature.ICON_IMAGE)) {
+                        taskbar.setIconImage(bimg);
+                    }
+                }
+            }
         } catch (Exception e) {
+            System.err.println("Could not load app icon: " + e.getMessage());
         }
 
         // OpenRouteService API â€” gerÃ§ek yol mesafesi + ETA
@@ -506,14 +522,34 @@ public class TaxiFinalApp extends JFrame {
     // --- 1. LOGIN SCREEN ---
     private JPanel createLoginPanel() {
         JPanel p = createWrapper();
-        // Branded Logo (The first one I made!)
+        // Branded Logo
         try {
-            ImageIcon logoIcon = new ImageIcon("resources/logo.png");
-            Image img = logoIcon.getImage().getScaledInstance(120, 120, Image.SCALE_SMOOTH);
-            JLabel logoLabel = new JLabel(new ImageIcon(img), SwingConstants.CENTER);
-            logoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-            p.add(logoLabel);
+            File logoFile = new File("resources/logo.png");
+            if (!logoFile.exists()) logoFile = new File("logo.png");
+            
+            if (logoFile.exists()) {
+                BufferedImage bimg = ImageIO.read(logoFile);
+                if (bimg != null) {
+                    Image scaled = bimg.getScaledInstance(120, 120, Image.SCALE_SMOOTH);
+                    ImageIcon logoIcon = new ImageIcon(scaled);
+                    JLabel logoLabel = new JLabel(logoIcon, SwingConstants.CENTER);
+                    logoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+                    
+                    // Explicitly set sizes to prevent BoxLayout from collapsing it
+                    logoLabel.setPreferredSize(new Dimension(120, 120));
+                    logoLabel.setMinimumSize(new Dimension(120, 120));
+                    logoLabel.setMaximumSize(new Dimension(120, 120));
+                    logoLabel.setToolTipText("Order A Taxi Logo");
+                    
+                    p.add(logoLabel);
+                } else {
+                    throw new Exception("ImageIO.read returned null");
+                }
+            } else {
+                throw new Exception("Logo file not found at " + logoFile.getAbsolutePath());
+            }
         } catch (Exception e) {
+            System.err.println("Logo loading failed: " + e.getMessage());
             JLabel icon = new JLabel("\uD83D\uDE96", SwingConstants.CENTER);
             icon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 70));
             icon.setForeground(CLR_TAXI_YELLOW);

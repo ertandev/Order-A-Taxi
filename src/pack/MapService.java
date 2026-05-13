@@ -6,19 +6,11 @@ import java.util.Calendar;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-/**
- * MapService — Component Diagram: MapService → GoogleMapsAPI (ücretsiz alternatif: OpenRouteService)
- * Sequence Diagram: getRoute(pickup,dropoff) → Route(9.3km, 12min) → calculateFare
- *
- * API: OpenRouteService (openrouteservice.org)
- *   - Ücretsiz: 2000 istek/gün
- *   - API key: openrouteservice.org'dan e-posta ile ücretsiz alınır
- *   - Fallback: API key yoksa Haversine (offline) hesaplama kullanılır
- */
+
 public class MapService {
 
     // openrouteservice.org'dan ücretsiz alınan API key buraya yazılır
-    private static String API_KEY = "YOUR_ORS_API_KEY";
+    private static String API_KEY = "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImM2ZmZlZTUwNzk5MzQ0OTdhZWU4NDA2ZWJhMGU1MzdiIiwiaCI6Im11cm11cjY0In0=";
     private static final String ORS_URL =
             "https://api.openrouteservice.org/v2/directions/driving-car";
 
@@ -54,9 +46,18 @@ public class MapService {
             conn.setRequestMethod("GET");
             conn.setConnectTimeout(5000);
             conn.setReadTimeout(5000);
-            conn.setRequestProperty("Accept", "application/json");
+            conn.setRequestProperty("Accept", "application/geo+json; charset=utf-8");
 
-            if (conn.getResponseCode() != 200) return fallbackRoute(from, to, hour);
+            int responseCode = conn.getResponseCode();
+            if (responseCode != 200) {
+                System.err.println("[MapService] ORS API Error " + responseCode);
+                // Print error message from server if possible
+                try (BufferedReader br = new BufferedReader(new InputStreamReader(conn.getErrorStream()))) {
+                    String line;
+                    while ((line = br.readLine()) != null) System.err.println("  > " + line);
+                } catch (Exception ignore) {}
+                return fallbackRoute(from, to, hour);
+            }
 
             // JSON okuma (regex ile extract — ek kütüphane gerektirmez)
             StringBuilder sb = new StringBuilder();

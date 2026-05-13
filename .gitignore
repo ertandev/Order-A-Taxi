@@ -1,0 +1,15 @@
+# Ignore compiled Java files
+/bin/
+*.class
+
+# Ignore Eclipse project files
+.classpath
+.project
+.settings/
+
+# Ignore database and user data
+remember.dat
+orderataxi.db
+
+# Ignore OS files
+.DS_Store

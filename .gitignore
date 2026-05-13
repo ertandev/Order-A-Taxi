@@ -3,7 +3,6 @@
 *.class
 
 # Ignore Eclipse project files
-.classpath
 .project
 .settings/
 

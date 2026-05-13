@@ -258,16 +258,10 @@ public class MapPickerDialog extends JDialog {
         mapViewer.addMouseListener(mia);
         mapViewer.addMouseMotionListener(mia);
 
-        // Zoom desteği — hem fare tekerleği hem trackpad pinch-to-zoom için
-        // getPreciseWheelRotation() kullanıyoruz; bu Mac trackpad'in küçük
-        // ondalıklı sinyallerini de yakalar. Biriken delta eşiği aşınca zoom uygular.
         final double[] zoomAccumulator = {0.0};
         mapViewer.addMouseWheelListener(e -> {
-            // preciseWheelRotation: fare için tam sayı, trackpad için küçük ondalıklar
             double delta = e.getPreciseWheelRotation();
             zoomAccumulator[0] += delta;
-
-            // Eşik: 0.7 birik→ zoom tetikle (duyarlılık için ayarlanabilir)
             final double threshold = 0.7;
             while (zoomAccumulator[0] >= threshold) {
                 zoomAccumulator[0] -= threshold;

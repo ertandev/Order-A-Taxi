@@ -1129,6 +1129,8 @@ public class TaxiFinalApp extends JFrame {
 
     // --- 3. PASSENGER HOME WIZARD ---
     private JComboBox<String> comboDrivers;
+    private JComboBox<String> comboBackupDrivers;
+    private List<Driver> currentAvailableDrivers = new java.util.ArrayList<>();
 
     private JPanel createPassengerHome() {
         JPanel wrapper = new JPanel(new BorderLayout());
@@ -1171,10 +1173,86 @@ public class TaxiFinalApp extends JFrame {
         vehicleType.setForeground(Color.BLACK);
         vehicleType.setFont(FONT_NORMAL);
 
-        comboDrivers = new JComboBox<>();
+        comboDrivers = new JComboBox<String>() {
+            @Override
+            public void setSelectedIndex(int anIndex) {
+                if (anIndex >= 0 && anIndex < getItemCount()) {
+                    String item = getItemAt(anIndex);
+                    if (item != null && item.contains("[IN RIDE]")) {
+                        return;
+                    }
+                }
+                super.setSelectedIndex(anIndex);
+            }
+        };
         comboDrivers.setBackground(CLR_TAXI_YELLOW);
         comboDrivers.setForeground(Color.BLACK);
         comboDrivers.setFont(FONT_NORMAL);
+
+        comboBackupDrivers = new JComboBox<String>() {
+            @Override
+            public void setSelectedIndex(int anIndex) {
+                if (anIndex >= 0 && anIndex < getItemCount()) {
+                    String item = getItemAt(anIndex);
+                    if (item != null && item.contains("[IN RIDE]")) {
+                        return;
+                    }
+                }
+                super.setSelectedIndex(anIndex);
+            }
+        };
+        comboBackupDrivers.setBackground(CLR_TAXI_YELLOW);
+        comboBackupDrivers.setForeground(Color.BLACK);
+        comboBackupDrivers.setFont(FONT_NORMAL);
+        comboBackupDrivers.setVisible(false);
+
+        javax.swing.ListCellRenderer<? super String> renderer = new javax.swing.DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(javax.swing.JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                
+                if (index == -1) {
+                    // Ana kutuda görünen seçili eleman
+                    c.setBackground(CLR_TAXI_YELLOW);
+                    c.setForeground(Color.BLACK);
+                } else {
+                    // Açılır listedeki elemanlar
+                    if (isSelected) {
+                        c.setBackground(CLR_TAXI_YELLOW);
+                        c.setForeground(Color.BLACK);
+                    } else {
+                        c.setBackground(CLR_CARD_BG);
+                        c.setForeground(Color.WHITE);
+                    }
+                }
+                
+                if (value != null && value.toString().contains("[IN RIDE]")) {
+                    c.setForeground(Color.GRAY);
+                }
+                
+                return c;
+            }
+        };
+        comboDrivers.setRenderer(renderer);
+        comboBackupDrivers.setRenderer(renderer);
+
+
+        
+        comboDrivers.addItemListener(e -> {
+            if (e.getStateChange() == java.awt.event.ItemEvent.SELECTED && currentAvailableDrivers != null) {
+                int mainIdx = comboDrivers.getSelectedIndex();
+                comboBackupDrivers.removeAllItems();
+                if (mainIdx >= 0 && mainIdx < currentAvailableDrivers.size()) {
+                    for (int i = 0; i < currentAvailableDrivers.size(); i++) {
+                        if (i == mainIdx) continue; // Skip the currently selected main driver
+                        Driver d = currentAvailableDrivers.get(i);
+                        String itemText = d.getName() + " [" + d.getServiceType() + "] (" + String.format("%.1f", d.getAverageRating()) + "*)"
+                                + (d.isAvailable() ? "" : " [IN RIDE]");
+                        comboBackupDrivers.addItem(itemText);
+                    }
+                }
+            }
+        });
 
         JPanel pricePanel = new JPanel();
         pricePanel.setLayout(new BoxLayout(pricePanel, BoxLayout.Y_AXIS));
@@ -1472,6 +1550,19 @@ public class TaxiFinalApp extends JFrame {
         g3.weightx = 1.0;
         schedForm.add(vehicleType, g3);
 
+        g3.gridx = 0;
+        g3.gridy = 4;
+        g3.weightx = 0;
+        schedForm.add(createLabel("Priority:", false), g3);
+        JCheckBox chkBackupDriver = new JCheckBox("Alternative Driver");
+        chkBackupDriver.setBackground(CLR_CARD_BG);
+        chkBackupDriver.setForeground(Color.WHITE);
+        chkBackupDriver.setFont(FONT_NORMAL);
+        chkBackupDriver.setFocusPainted(false);
+        g3.gridx = 1;
+        g3.weightx = 1.0;
+        schedForm.add(chkBackupDriver, g3);
+
         JPanel s3Top = new JPanel();
         s3Top.setLayout(new BoxLayout(s3Top, BoxLayout.Y_AXIS));
         s3Top.setBackground(CLR_BG);
@@ -1486,59 +1577,97 @@ public class TaxiFinalApp extends JFrame {
         JButton btnFind = createModernButton("Check Price & Drivers", CLR_TAXI_YELLOW, CLR_TAXI_BLACK);
         btnFind.setAlignmentX(Component.CENTER_ALIGNMENT);
         btnFind.addActionListener(e -> {
-            Location loc1;
-            Location loc2;
-            if (from.getClientProperty("lat") != null && from.getClientProperty("lon") != null) {
-                loc1 = new Location((Double) from.getClientProperty("lat"), (Double) from.getClientProperty("lon"));
-            } else {
-                loc1 = getCoordinates(from.getText());
-            }
-            if (to.getClientProperty("lat") != null && to.getClientProperty("lon") != null) {
-                loc2 = new Location((Double) to.getClientProperty("lat"), (Double) to.getClientProperty("lon"));
-            } else {
-                loc2 = getCoordinates(to.getText());
-            }
+            btnFind.setEnabled(false);
+            pricePanel.setVisible(false);
+            comboDrivers.setVisible(false);
+            comboBackupDrivers.setVisible(false);
 
-            int targetHour;
-            if (timingCombo.getSelectedIndex() == 0) { // Ride Now
-                targetHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
-            } else { // Schedule Later
-                String timeStr = timeField.getText();
-                targetHour = Integer.parseInt(timeStr.split(":")[0]);
-            }
-            Route route = MapService.getRoute(loc1, loc2, targetHour);
-            VehicleType vt = vehicleType.getSelectedItem().equals("Premium") ? VehicleType.PREMIUM
-                    : vehicleType.getSelectedItem().equals("XL") ? VehicleType.XL : VehicleType.ECONOMY;
-            double price = PricingService.calculateFare(route.getDistanceKm(), vt, route.getTrafficFactor());
-            String feeNote = "";
-            if (timingCombo.getSelectedIndex() == 1) {
-                price *= 1.20; // 20% Uber Reserve premium
-                feeNote = " (inc. fee)";
-            }
-            int eta = route.getDurationMinutes();
+            javax.swing.Timer timer = new javax.swing.Timer(300, null);
+            int[] ticks = {0};
+            timer.addActionListener(evt -> {
+                ticks[0]++;
+                String dots = "";
+                for (int i = 0; i < (ticks[0] % 4); i++) dots += ".";
+                btnFind.setText("Checking" + dots);
 
-            List<Driver> allDrivers = manager.getAllDrivers().stream().filter(d -> d.isApproved() && !d.isBanned())
-                    .collect(java.util.stream.Collectors.toList());
-            comboDrivers.removeAllItems();
-            for (Driver d : allDrivers) {
-                comboDrivers.addItem(d.getName() + " (" + String.format("%.1f", d.getAverageRating()) + "*)"
-                        + (d.isAvailable() ? "" : " [BUSY]"));
-            }
-            // Native Swing vertical layout (No HTML wrapping issues)
-            lblPriceAmount.setText(String.format("Est. %.0f TL", price));
-            if (feeNote.isEmpty()) {
-                lblPriceFee.setVisible(false);
-            } else {
-                lblPriceFee.setVisible(true);
-                lblPriceFee.setText(feeNote.trim());
-            }
-            lblPriceDetails.setText(String.format("\u23F2 ~%dmin    \uD83D\uDE95 %.1fkm", eta, route.getDistanceKm()));
-            pricePanel.setVisible(true);
+                if (ticks[0] >= 5) { // Stop after ~1.5s
+                    timer.stop();
+                    btnFind.setText("Check Price & Drivers");
+                    btnFind.setEnabled(true);
+
+                    Location loc1;
+                    Location loc2;
+                    if (from.getClientProperty("lat") != null && from.getClientProperty("lon") != null) {
+                        loc1 = new Location((Double) from.getClientProperty("lat"), (Double) from.getClientProperty("lon"));
+                    } else {
+                        loc1 = getCoordinates(from.getText());
+                    }
+                    if (to.getClientProperty("lat") != null && to.getClientProperty("lon") != null) {
+                        loc2 = new Location((Double) to.getClientProperty("lat"), (Double) to.getClientProperty("lon"));
+                    } else {
+                        loc2 = getCoordinates(to.getText());
+                    }
+
+                    int targetHour;
+                    if (timingCombo.getSelectedIndex() == 0) { // Ride Now
+                        targetHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
+                    } else { // Schedule Later
+                        String timeStr = timeField.getText();
+                        targetHour = Integer.parseInt(timeStr.split(":")[0]);
+                    }
+                    Route route = MapService.getRoute(loc1, loc2, targetHour);
+                    VehicleType vt = vehicleType.getSelectedItem().equals("Premium") ? VehicleType.PREMIUM
+                            : vehicleType.getSelectedItem().equals("XL") ? VehicleType.XL : VehicleType.ECONOMY;
+                    double price = PricingService.calculateFare(route.getDistanceKm(), vt, route.getTrafficFactor());
+                    String feeNote = "";
+                    if (timingCombo.getSelectedIndex() == 1) {
+                        price *= 1.20; // 20% Uber Reserve premium
+                        feeNote = " (inc. fee)";
+                    }
+                    if (chkBackupDriver.isSelected()) {
+                        double backupFee = route.getDistanceKm() * 5.0; // 5 TL extra per km for backup driver
+                        price += backupFee;
+                        if (feeNote.isEmpty()) {
+                            feeNote = " (inc. backup fee)";
+                        } else {
+                            feeNote = " (inc. all fees)";
+                        }
+                    }
+                    int eta = route.getDurationMinutes();
+
+                    currentAvailableDrivers = manager.getAllDrivers().stream()
+                            .filter(d -> d.isApproved() && !d.isBanned() && d.getServiceType() == vt)
+                            .sorted(java.util.Comparator.comparing(Driver::getName))
+                            .collect(java.util.stream.Collectors.toList());
+                    comboDrivers.removeAllItems();
+                    for (Driver d : currentAvailableDrivers) {
+                        String itemText = d.getName() + " [" + d.getServiceType() + "] (" + String.format("%.1f", d.getAverageRating()) + "*)"
+                                + (d.isAvailable() ? "" : " [IN RIDE]");
+                        comboDrivers.addItem(itemText);
+                    }
+                    comboBackupDrivers.setVisible(chkBackupDriver.isSelected());
+                    comboDrivers.setVisible(true);
+
+                    // Native Swing vertical layout (No HTML wrapping issues)
+                    lblPriceAmount.setText(String.format("Est. %.0f TL", price));
+                    if (feeNote.isEmpty()) {
+                        lblPriceFee.setVisible(false);
+                    } else {
+                        lblPriceFee.setVisible(true);
+                        lblPriceFee.setText(feeNote.trim());
+                    }
+                    lblPriceDetails.setText(String.format("\u23F2 ~%dmin    \uD83D\uDE95 %.1fkm", eta, route.getDistanceKm()));
+                    pricePanel.setVisible(true);
+                }
+            });
+            timer.start();
         });
 
         comboDrivers.setMaximumSize(new Dimension(300, 40));
+        comboBackupDrivers.setMaximumSize(new Dimension(300, 40));
         pricePanel.setAlignmentX(Component.CENTER_ALIGNMENT);
         comboDrivers.setAlignmentX(Component.CENTER_ALIGNMENT);
+        comboBackupDrivers.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         actionPanel.add(Box.createVerticalStrut(15));
         actionPanel.add(btnFind);
@@ -1546,6 +1675,8 @@ public class TaxiFinalApp extends JFrame {
         actionPanel.add(pricePanel);
         actionPanel.add(Box.createVerticalStrut(5));
         actionPanel.add(comboDrivers);
+        actionPanel.add(Box.createVerticalStrut(5));
+        actionPanel.add(comboBackupDrivers);
 
         JButton btnRequest = createModernButton("PROCEED TO PAYMENT", CLR_TAXI_YELLOW, CLR_TAXI_BLACK);
         btnRequest.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -1684,19 +1815,33 @@ public class TaxiFinalApp extends JFrame {
                 JOptionPane.showMessageDialog(this, "Click 'Check Price' first!");
                 return;
             }
+            int sIdx = comboDrivers.getSelectedIndex();
+            if (sIdx >= 0 && sIdx < currentAvailableDrivers.size()) {
+                if (!currentAvailableDrivers.get(sIdx).isAvailable()) {
+                    JOptionPane.showMessageDialog(this, "The selected driver is currently IN RIDE.\nPlease choose a different driver to proceed.");
+                    return;
+                }
+            }
             wizardLayout.show(wizardPanel, "STEP4");
         });
 
         btnFinalConfirm.addActionListener(e -> {
-            List<Driver> allDrivers = manager.getAllDrivers().stream().filter(d -> d.isApproved() && !d.isBanned())
-                    .collect(java.util.stream.Collectors.toList());
             int sIdx = comboDrivers.getSelectedIndex();
-            if (sIdx < 0)
+            if (sIdx < 0 || sIdx >= currentAvailableDrivers.size())
                 return;
-            Driver selectedDriver = allDrivers.get(sIdx);
+            Driver selectedDriver = currentAvailableDrivers.get(sIdx);
             if (!selectedDriver.isAvailable()) {
-                JOptionPane.showMessageDialog(this, "Driver is busy!");
+                JOptionPane.showMessageDialog(this, "Main driver is busy!");
                 return;
+            }
+            
+            Driver backupDriver = null;
+            if (chkBackupDriver.isSelected() && comboBackupDrivers.getSelectedIndex() >= 0) {
+                int backupComboIdx = comboBackupDrivers.getSelectedIndex();
+                int mappedIdx = backupComboIdx >= sIdx ? backupComboIdx + 1 : backupComboIdx;
+                if (mappedIdx >= 0 && mappedIdx < currentAvailableDrivers.size()) {
+                    backupDriver = currentAvailableDrivers.get(mappedIdx);
+                }
             }
 
             if (timingCombo.getSelectedIndex() == 1) { // Schedule Later
@@ -1764,6 +1909,17 @@ public class TaxiFinalApp extends JFrame {
                 pm = PaymentMethod.CASH;
 
             currentRide = rideService.requestRide((Passenger) currentUser, loc1, loc2, vt, pm);
+            
+            // Uygulanan ekstra ücretleri son onaya yansıt (Schedule & Backup)
+            if (timingCombo.getSelectedIndex() == 1) {
+                currentRide.setFareAmount(currentRide.getFareAmount() * 1.20);
+            }
+            if (chkBackupDriver.isSelected() && backupDriver != null) {
+                double backupFee = currentRide.getDistanceKm() * 5.0;
+                currentRide.setFareAmount(currentRide.getFareAmount() + backupFee);
+                currentRide.setBackupDriver(backupDriver);
+            }
+            
             currentRide.setTipAmount(tipVal);
             double total = currentRide.getFareAmount() + tipVal;
 
@@ -2898,15 +3054,49 @@ public class TaxiFinalApp extends JFrame {
         header.setBackground(CLR_BG);
         header.setBorder(new EmptyBorder(10, 20, 0, 20));
 
-        JButton btnHeaderBack = new JButton("\u2190 Logout");
-        btnHeaderBack.setFont(FONT_SMALL);
-        btnHeaderBack.setForeground(CLR_TAXI_YELLOW);
-        btnHeaderBack.setBackground(CLR_BG);
+        JButton btnHeaderBack = new JButton("\u2190 Logout") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                int radius = getHeight(); // Tam yuvarlak (pill shape) kenarlar için
+                // Glassmorphism effect
+                if (getModel().isRollover()) {
+                    g2.setColor(new Color(255, 204, 0, 50)); 
+                } else {
+                    g2.setColor(new Color(255, 255, 255, 25)); 
+                }
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
+                g2.setColor(new Color(255, 255, 255, 60)); 
+                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, radius, radius);
+                super.paintComponent(g);
+                g2.dispose();
+            }
+        };
+        btnHeaderBack.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        btnHeaderBack.setForeground(Color.WHITE);
+        btnHeaderBack.setBackground(new Color(0, 0, 0, 0));
+        btnHeaderBack.setOpaque(false);
+        btnHeaderBack.setContentAreaFilled(false);
         btnHeaderBack.setBorderPainted(false);
         btnHeaderBack.setFocusPainted(false);
         btnHeaderBack.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnHeaderBack.setBorder(new EmptyBorder(8, 20, 8, 20)); // Yatay marginleri biraz artırdık
+        btnHeaderBack.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btnHeaderBack.setForeground(CLR_TAXI_YELLOW);
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btnHeaderBack.setForeground(Color.WHITE);
+            }
+        });
         btnHeaderBack.addActionListener(e -> cardLayout.show(mainPanel, "LOGIN"));
-        header.add(btnHeaderBack, BorderLayout.WEST);
+        
+        // Butonun dikine sünmemesi (kare durmaması) için FlowLayout içine alıyoruz
+        JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 10)); // Yukarıdan ve soldan hizalama
+        leftPanel.setOpaque(false);
+        leftPanel.add(btnHeaderBack);
+        header.add(leftPanel, BorderLayout.WEST);
 
         JLabel title = new JLabel("Driver Dashboard", SwingConstants.CENTER);
         title.setFont(FONT_TITLE);
@@ -2917,6 +3107,7 @@ public class TaxiFinalApp extends JFrame {
 
         JPanel centerPanel = new JPanel(new BorderLayout());
         centerPanel.setBackground(CLR_BG);
+        centerPanel.setBorder(new EmptyBorder(20, 25, 20, 25)); // 0px yasak olduğu için ferah bir margin eklendi
 
         String[] columns = { "Passenger", "Route", "Distance", "Fare", "Tip" };
         DefaultTableModel requestModel = new DefaultTableModel(columns, 0) {
@@ -2949,29 +3140,96 @@ public class TaxiFinalApp extends JFrame {
         }
 
         JTable requestTable = new JTable(requestModel);
-        requestTable.setRowHeight(40);
+        requestTable.setRowHeight(60); // 0px yasak ve 2 satır alabilmesi için 60px yapıldı
         requestTable.setFont(FONT_NORMAL);
         requestTable.setBackground(CLR_CARD_BG);
         requestTable.setForeground(Color.WHITE);
         requestTable.setGridColor(CLR_BORDER);
         requestTable.setSelectionBackground(CLR_TAXI_YELLOW);
         requestTable.setSelectionForeground(CLR_TAXI_BLACK);
+
+        // Hem font küçülten hem de sığmazsa aşağı iteleyen (line wrap) "ikisi birden" renderer
+        javax.swing.table.TableCellRenderer autoFitRenderer = new javax.swing.table.TableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                javax.swing.JTextArea textArea = new javax.swing.JTextArea(value != null ? value.toString() : "");
+                textArea.setLineWrap(true);
+                textArea.setWrapStyleWord(true);
+                textArea.setOpaque(true);
+                textArea.setBorder(new javax.swing.border.EmptyBorder(10, 5, 10, 5)); // Sağ-sol padding düşürüldü sığması için
+                if (isSelected) {
+                    textArea.setBackground(CLR_TAXI_YELLOW);
+                    textArea.setForeground(CLR_TAXI_BLACK);
+                } else {
+                    textArea.setBackground(CLR_CARD_BG);
+                    textArea.setForeground(java.awt.Color.WHITE);
+                }
+                
+                // Font küçültme mantığı
+                java.awt.Font font = FONT_NORMAL;
+                int colWidth = table.getColumnModel().getColumn(column).getWidth() - 10; // 5 sol + 5 sağ padding
+                if (colWidth > 5 && value != null) {
+                    java.awt.FontMetrics fm = table.getFontMetrics(font);
+                    int textWidth = fm.stringWidth(value.toString());
+                    if (textWidth > colWidth) {
+                        float newSize = font.getSize2D() * ((float) colWidth / textWidth);
+                        newSize = Math.max(9f, newSize); 
+                        font = font.deriveFont(newSize);
+                    }
+                }
+                textArea.setFont(font);
+                return textArea;
+            }
+        };
+        requestTable.setDefaultRenderer(Object.class, autoFitRenderer);
+        
+        // Kolon genişlikleri ve sıfıra çekilmeyi engellemek için minimum genişlikler
+        if (requestTable.getColumnModel().getColumnCount() == 5) {
+            requestTable.getColumnModel().getColumn(0).setPreferredWidth(120);
+            requestTable.getColumnModel().getColumn(0).setMinWidth(70);
+            
+            requestTable.getColumnModel().getColumn(1).setPreferredWidth(160);
+            requestTable.getColumnModel().getColumn(1).setMinWidth(90);
+            
+            requestTable.getColumnModel().getColumn(2).setPreferredWidth(80);
+            requestTable.getColumnModel().getColumn(2).setMinWidth(55);
+            
+            requestTable.getColumnModel().getColumn(3).setPreferredWidth(70);
+            requestTable.getColumnModel().getColumn(3).setMinWidth(50);
+            
+            requestTable.getColumnModel().getColumn(4).setPreferredWidth(70);
+            requestTable.getColumnModel().getColumn(4).setMinWidth(40);
+        }
         requestTable.getTableHeader().setFont(FONT_BUTTON);
         requestTable.getTableHeader().setBackground(CLR_TAXI_YELLOW);
         requestTable.getTableHeader().setForeground(CLR_TAXI_BLACK);
         requestTable.getTableHeader().setOpaque(true);
-        // Custom header renderer to override Windows L&F
+        // Custom header renderer to override Windows L&F and shrink font
         requestTable.getTableHeader().setDefaultRenderer(new javax.swing.table.DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
                     boolean hasFocus, int row, int column) {
-                JLabel label = new JLabel(value != null ? value.toString() : "");
-                label.setFont(FONT_BUTTON);
+                javax.swing.JLabel label = new javax.swing.JLabel(value != null ? value.toString() : "");
                 label.setBackground(CLR_TAXI_YELLOW);
                 label.setForeground(CLR_TAXI_BLACK);
                 label.setOpaque(true);
-                label.setBorder(new EmptyBorder(8, 10, 8, 10));
-                label.setHorizontalAlignment(SwingConstants.LEFT);
+                label.setBorder(new javax.swing.border.EmptyBorder(12, 5, 12, 5)); // Sağ-sol padding düşürüldü
+                label.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+                
+                // Başlıklar için font küçültme mantığı
+                java.awt.Font font = FONT_BUTTON;
+                int colWidth = table.getColumnModel().getColumn(column).getWidth() - 10; // 5 sol + 5 sağ
+                if (colWidth > 5 && value != null) {
+                    java.awt.FontMetrics fm = label.getFontMetrics(font);
+                    int textWidth = fm.stringWidth(value.toString());
+                    if (textWidth > colWidth) {
+                        float newSize = font.getSize2D() * ((float) colWidth / textWidth);
+                        newSize = Math.max(9f, newSize); 
+                        font = font.deriveFont(newSize);
+                    }
+                }
+                label.setFont(font);
+                
                 return label;
             }
         });
@@ -3314,25 +3572,90 @@ public class TaxiFinalApp extends JFrame {
             }
         };
         JTable histTable = new JTable(histModel);
-        histTable.setRowHeight(32);
+        histTable.setRowHeight(60); // 0px yasak ve line wrap için yükseltildi
         histTable.setBackground(CLR_CARD_BG);
         histTable.setForeground(Color.WHITE);
         histTable.setGridColor(CLR_BORDER);
         histTable.setSelectionBackground(CLR_TAXI_YELLOW);
         histTable.setSelectionForeground(CLR_TAXI_BLACK);
-        histTable.setFont(FONT_NORMAL);
+        
+        // --- İKİSİ BİRDEN: Auto-Shrink + Line Wrap ---
+        javax.swing.table.TableCellRenderer autoFitRenderer = new javax.swing.table.TableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                javax.swing.JTextArea textArea = new javax.swing.JTextArea(value != null ? value.toString() : "");
+                textArea.setLineWrap(true);
+                textArea.setWrapStyleWord(true);
+                textArea.setOpaque(true);
+                textArea.setBorder(new javax.swing.border.EmptyBorder(10, 5, 10, 5));
+                if (isSelected) {
+                    textArea.setBackground(CLR_TAXI_YELLOW);
+                    textArea.setForeground(CLR_TAXI_BLACK);
+                } else {
+                    textArea.setBackground(CLR_CARD_BG);
+                    textArea.setForeground(Color.WHITE);
+                }
+                
+                java.awt.Font font = FONT_NORMAL;
+                int colWidth = table.getColumnModel().getColumn(column).getWidth() - 10; 
+                if (colWidth > 5 && value != null) {
+                    java.awt.FontMetrics fm = table.getFontMetrics(font);
+                    int textWidth = fm.stringWidth(value.toString());
+                    if (textWidth > colWidth) {
+                        float newSize = font.getSize2D() * ((float) colWidth / textWidth);
+                        newSize = Math.max(9f, newSize); 
+                        font = font.deriveFont(newSize);
+                    }
+                }
+                textArea.setFont(font);
+                return textArea;
+            }
+        };
+        histTable.setDefaultRenderer(Object.class, autoFitRenderer);
+
+        // Kolon Genişlikleri
+        if (histTable.getColumnModel().getColumnCount() == 6) {
+            histTable.getColumnModel().getColumn(0).setPreferredWidth(40);
+            histTable.getColumnModel().getColumn(0).setMinWidth(30); 
+            histTable.getColumnModel().getColumn(1).setPreferredWidth(140);
+            histTable.getColumnModel().getColumn(1).setMinWidth(80); 
+            histTable.getColumnModel().getColumn(2).setPreferredWidth(140);
+            histTable.getColumnModel().getColumn(2).setMinWidth(80); 
+            histTable.getColumnModel().getColumn(3).setPreferredWidth(80);
+            histTable.getColumnModel().getColumn(3).setMinWidth(60); 
+            histTable.getColumnModel().getColumn(4).setPreferredWidth(80);
+            histTable.getColumnModel().getColumn(4).setMinWidth(60); 
+            histTable.getColumnModel().getColumn(5).setPreferredWidth(100);
+            histTable.getColumnModel().getColumn(5).setMinWidth(70); 
+        }
+
         histTable.getTableHeader().setFont(FONT_BUTTON);
         histTable.getTableHeader().setBackground(CLR_TAXI_YELLOW);
         histTable.getTableHeader().setForeground(CLR_TAXI_BLACK);
+        
         histTable.getTableHeader().setDefaultRenderer(new javax.swing.table.DefaultTableCellRenderer() {
-            public Component getTableCellRendererComponent(JTable t, Object v, boolean s, boolean f, int r, int c) {
-                JLabel lbl = new JLabel(v != null ? v.toString() : "");
-                lbl.setFont(FONT_BUTTON);
-                lbl.setBackground(CLR_TAXI_YELLOW);
-                lbl.setForeground(CLR_TAXI_BLACK);
-                lbl.setOpaque(true);
-                lbl.setBorder(new EmptyBorder(8, 10, 8, 10));
-                return lbl;
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                javax.swing.JLabel label = new javax.swing.JLabel(value != null ? value.toString() : "");
+                label.setBackground(CLR_TAXI_YELLOW);
+                label.setForeground(CLR_TAXI_BLACK);
+                label.setOpaque(true);
+                label.setBorder(new javax.swing.border.EmptyBorder(12, 5, 12, 5));
+                label.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+                
+                java.awt.Font font = FONT_BUTTON;
+                int colWidth = table.getColumnModel().getColumn(column).getWidth() - 10;
+                if (colWidth > 5 && value != null) {
+                    java.awt.FontMetrics fm = label.getFontMetrics(font);
+                    int textWidth = fm.stringWidth(value.toString());
+                    if (textWidth > colWidth) {
+                        float newSize = font.getSize2D() * ((float) colWidth / textWidth);
+                        newSize = Math.max(9f, newSize); 
+                        font = font.deriveFont(newSize);
+                    }
+                }
+                label.setFont(font);
+                return label;
             }
         });
 

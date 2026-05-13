@@ -249,6 +249,7 @@ class Ride {
     private Payment payment;
     private double tipAmount = 0.0;
     private LocalDateTime startTime;
+    private Driver backupDriver;
 
     public Ride(Passenger p, String start, String end, String time) {
         this.passenger = p;
@@ -308,6 +309,8 @@ class Ride {
 
     public LocalDateTime getStartTime() { return startTime; }
     public void setStartTime(LocalDateTime st) { this.startTime = st; }
+    public Driver getBackupDriver() { return backupDriver; }
+    public void setBackupDriver(Driver bd) { this.backupDriver = bd; }
 
     @Override
     public String toString() {

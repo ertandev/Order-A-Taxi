@@ -1243,10 +1243,7 @@ public class TaxiFinalApp extends JFrame {
                 }
                 
                 if (value != null && value.toString().contains("[IN RIDE]")) {
-                    c.setForeground(Color.GRAY);
-                    c.setEnabled(false);
-                } else {
-                    c.setEnabled(true);
+                    c.setForeground(new Color(128, 128, 128));
                 }
                 
                 return c;
@@ -1451,13 +1448,6 @@ public class TaxiFinalApp extends JFrame {
         s2Top.add(locForm);
 
         JButton btnNext2 = createModernButton("NEXT STEP", CLR_TAXI_YELLOW, CLR_TAXI_BLACK);
-        btnNext2.addActionListener(e -> {
-            if (from.getText().isEmpty() || to.getText().isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Please enter pickup and dropoff locations!");
-                return;
-            }
-            wizardLayout.show(wizardPanel, "STEP3");
-        });
         JPanel s2Bot = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         s2Bot.setBackground(CLR_BG);
         JButton btnBack1 = createModernButton("Back", CLR_CARD_BG, CLR_TAXI_YELLOW);
@@ -1682,6 +1672,18 @@ public class TaxiFinalApp extends JFrame {
                                 + (d.isAvailable() ? "" : " [IN RIDE]");
                         comboDrivers.addItem(itemText);
                     }
+                    
+                    // Auto select the first available driver if the top ones are busy
+                    int firstAvailableIdx = -1;
+                    for (int i = 0; i < currentAvailableDrivers.size(); i++) {
+                        if (currentAvailableDrivers.get(i).isAvailable()) {
+                            firstAvailableIdx = i;
+                            break;
+                        }
+                    }
+                    if (firstAvailableIdx != -1) {
+                        comboDrivers.setSelectedIndex(firstAvailableIdx);
+                    }
                     comboBackupDrivers.setVisible(chkBackupDriver.isSelected());
                     comboDrivers.setVisible(true);
 
@@ -1704,6 +1706,16 @@ public class TaxiFinalApp extends JFrame {
         chkBackupDriver.addActionListener(e -> btnFind.doClick());
         vehicleType.addActionListener(e -> btnFind.doClick());
         timingCombo.addActionListener(e -> btnFind.doClick());
+
+        btnNext2.addActionListener(e -> {
+            if (from.getText().isEmpty() || to.getText().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Please enter pickup and dropoff locations!");
+                return;
+            }
+            wizardLayout.show(wizardPanel, "STEP3");
+            manager.getAllDrivers(); // Refresh drivers from DB
+            btnFind.doClick(); // Automatically trigger price and driver check!
+        });
 
         comboDrivers.setMaximumSize(new Dimension(300, 40));
         comboBackupDrivers.setMaximumSize(new Dimension(300, 40));

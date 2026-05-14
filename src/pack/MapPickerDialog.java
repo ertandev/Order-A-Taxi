@@ -135,8 +135,14 @@ public class MapPickerDialog extends JDialog {
             dispose();
         });
 
+        // Butonun arkasını sapsarı yapan kutu (wrapper)
+        JPanel confirmWrapper = new JPanel(new BorderLayout());
+        confirmWrapper.setBackground(CLR_YELLOW);
+        confirmWrapper.setBorder(new javax.swing.border.EmptyBorder(3, 3, 3, 3)); // 3px sarı çerçeve etkisi
+        confirmWrapper.add(btnConfirm, BorderLayout.CENTER);
+
         btnRow.add(btnCancel);
-        btnRow.add(btnConfirm);
+        btnRow.add(confirmWrapper);
         bottomBar.add(btnRow, BorderLayout.EAST);
         add(bottomBar, BorderLayout.SOUTH);
     }
@@ -449,9 +455,32 @@ public class MapPickerDialog extends JDialog {
         btn.setForeground(fg);
         btn.setFont(new Font("Segoe UI Symbol", Font.BOLD, 13));
         btn.setFocusPainted(false);
-        btn.setBorderPainted(false);
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn.setBorder(new EmptyBorder(8, 20, 8, 20));
+        
+        // Her zaman sarı çerçeve kullan (Sarı kutu görünümü)
+        btn.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(CLR_YELLOW, 2),
+                new EmptyBorder(8, 20, 8, 20)));
+                
+        btn.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent e) {
+                if (btn.isEnabled()) {
+                    // Sarı buton için koyu sarı (siyah değil!), diğerleri için kendi renginin koyusu
+                    if (bg.equals(CLR_YELLOW)) {
+                        btn.setBackground(new Color(204, 167, 0)); // Koyu sarı
+                    } else {
+                        btn.setBackground(bg.darker());
+                    }
+                }
+            }
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent e) {
+                if (btn.isEnabled()) {
+                    btn.setBackground(bg);
+                }
+            }
+        });
     }
 
     // ── Result Getters ────────────────────────────────────────────────────────

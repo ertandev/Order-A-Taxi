@@ -18,7 +18,7 @@ import java.net.URL;
 public class MapService {
 
     // openrouteservice.org'dan ücretsiz alınan API key buraya yazılır
-    private static String API_KEY = "YOUR_ORS_API_KEY";
+    private static String API_KEY = "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImM2ZmZlZTUwNzk5MzQ0OTdhZWU4NDA2ZWJhMGU1MzdiIiwiaCI6Im11cm11cjY0In0=";
     private static final String ORS_URL =
             "https://api.openrouteservice.org/v2/directions/driving-car";
 
@@ -30,10 +30,8 @@ public class MapService {
         return !API_KEY.equals("YOUR_ORS_API_KEY") && !API_KEY.isBlank();
     }
 
-    // ── ANA METOT: getRoute ───────────────────────────────────────────────────
-    /**
-     * Sequence Diagram: getRoute(pickup, dropoff) → Route
-     * OpenRouteService çağrısı yapar; başarısız olursa Haversine fallback.
+    /*
+     OpenRouteService çağrısı yapar; başarısız olursa Haversine fallback.
      */
     public static Route getRoute(Location from, Location to) {
         return getRoute(from, to, java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY));
@@ -54,9 +52,20 @@ public class MapService {
             conn.setRequestMethod("GET");
             conn.setConnectTimeout(5000);
             conn.setReadTimeout(5000);
-            conn.setRequestProperty("Accept", "application/json");
+            conn.setRequestProperty("Accept", "application/geo+json;charset=UTF-8");
 
-            if (conn.getResponseCode() != 200) return fallbackRoute(from, to, hour);
+            if (conn.getResponseCode() != 200) {
+                System.err.println("[MapService] ORS API error. Response Code: " + conn.getResponseCode());
+                try (BufferedReader br = new BufferedReader(new InputStreamReader(conn.getErrorStream()))) {
+                    String line;
+                    StringBuilder sb = new StringBuilder();
+                    while ((line = br.readLine()) != null) sb.append(line);
+                    System.err.println("[MapService] Error body: " + sb.toString());
+                } catch (Exception ex) {
+                    // Ignore
+                }
+                return fallbackRoute(from, to, hour);
+            }
 
             // JSON okuma (regex ile extract — ek kütüphane gerektirmez)
             StringBuilder sb = new StringBuilder();

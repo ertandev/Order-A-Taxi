@@ -1663,6 +1663,8 @@ public class TaxiFinalApp extends JFrame {
             timer.start();
         });
 
+        chkBackupDriver.addActionListener(e -> btnFind.doClick());
+
         comboDrivers.setMaximumSize(new Dimension(300, 40));
         comboBackupDrivers.setMaximumSize(new Dimension(300, 40));
         pricePanel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -3689,7 +3691,7 @@ public class TaxiFinalApp extends JFrame {
                 histModel.addRow(new Object[] { "-", "No rides yet", "", "", "", "" });
         };
 
-        btnRefresh.addActionListener(e -> refresh.run());
+        btnRefresh.addActionListener(e -> showLoadingAnimation(p, refresh));
         btnBack.addActionListener(e -> cardLayout.show(mainPanel, "PASSENGER_HOME"));
 
         JPanel bottom = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
@@ -3704,6 +3706,91 @@ public class TaxiFinalApp extends JFrame {
                 refresh.run();
         });
         return p;
+    }
+
+    private void showLoadingAnimation(Component parent, Runnable onComplete) {
+        JDialog dlg = new JDialog(SwingUtilities.getWindowAncestor(parent), "Loading", java.awt.Dialog.ModalityType.APPLICATION_MODAL);
+        dlg.setUndecorated(true);
+        dlg.setSize(parent.getSize());
+        try {
+            dlg.setLocation(parent.getLocationOnScreen());
+        } catch (Exception e) {
+            dlg.setLocationRelativeTo(parent);
+        }
+        
+        JPanel container = new JPanel(new GridBagLayout());
+        container.setBackground(CLR_BG); // Use the same background color as the app
+        
+        JPanel roadPanel = new JPanel() {
+            private int roadOffset = 0;
+            private int taxiX = 50;
+            private javax.swing.Timer animTimer;
+
+            {
+                setOpaque(false); // Make panel transparent
+                setPreferredSize(new Dimension(350, 180));
+
+                animTimer = new javax.swing.Timer(50, e -> {
+                    roadOffset = (roadOffset + 8) % 40;
+                    repaint();
+                });
+                animTimer.start();
+            }
+
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g;
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                int w = getWidth();
+                int h = getHeight();
+
+                // Road lines
+                g2.setColor(CLR_TAXI_YELLOW);
+                g2.setStroke(new BasicStroke(3, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 0,
+                        new float[] { 20, 15 }, roadOffset));
+                g2.drawLine(0, h / 2 + 45, w, h / 2 + 45);
+
+                // Side road lines
+                g2.setColor(new Color(200, 200, 200));
+                g2.setStroke(new BasicStroke(2));
+                g2.drawLine(0, h / 2 + 15, w, h / 2 + 15);
+                g2.drawLine(0, h - 5, w, h - 5);
+
+                // Taxi car
+                int carY = h / 2 + 50;
+                g2.setColor(CLR_TAXI_YELLOW);
+                g2.fillRoundRect(taxiX, carY, 60, 25, 8, 8);
+                g2.fillRoundRect(taxiX + 12, carY - 12, 35, 15, 6, 6);
+                g2.setColor(new Color(150, 200, 255));
+                g2.fillRect(taxiX + 15, carY - 9, 12, 10);
+                g2.fillRect(taxiX + 32, carY - 9, 12, 10);
+                g2.setColor(new Color(30, 30, 30));
+                g2.fillOval(taxiX + 8, carY + 18, 14, 14);
+                g2.fillOval(taxiX + 40, carY + 18, 14, 14);
+                g2.setColor(CLR_TAXI_BLACK);
+                g2.setFont(new Font(FONT_FAMILY, Font.BOLD, 8));
+                g2.drawString("TAXI", taxiX + 18, carY + 14);
+                
+                // Draw "Loading..." text
+                g2.setColor(Color.WHITE);
+                g2.setFont(new Font(FONT_FAMILY, Font.BOLD, 14));
+                g2.drawString("Refreshing...", 10, 25);
+            }
+        };
+        
+        container.add(roadPanel);
+        dlg.add(container);
+        
+        javax.swing.Timer closeTimer = new javax.swing.Timer(1500, e -> {
+            dlg.dispose();
+            onComplete.run();
+        });
+        closeTimer.setRepeats(false);
+        closeTimer.start();
+        
+        dlg.setVisible(true);
     }
 
     // â”€â”€ EARNINGS HISTORY (Driver â€” Use Case: "View Earnings History")

@@ -2662,7 +2662,7 @@ public class TaxiFinalApp extends JFrame {
         JPanel driversPanel = new JPanel(new BorderLayout());
         driversPanel.setBackground(CLR_CARD_BG);
         driverTableModel = new DefaultTableModel(
-                new String[] { "Name", "Email", "Verified", "Banned", "Avg. Rating", "Votes" }, 0);
+                new String[] { "Name", "Email", "Verified", "Banned", "<html>Avg.<br>Rating</html>", "Votes" }, 0);
         driverTable = new JTable(driverTableModel);
         driverTable.setRowHeight(30);
         driverTable.setBackground(CLR_CARD_BG);
@@ -2690,6 +2690,27 @@ public class TaxiFinalApp extends JFrame {
                 return label;
             }
         });
+        
+        // Disable auto-resize to enable horizontal scrollbar and prevent truncation
+        driverTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        
+        // Add margin between columns (side by side)
+        driverTable.getColumnModel().setColumnMargin(10);
+        
+        // Set column widths and minimum widths to prevent truncation
+        driverTable.getColumnModel().getColumn(0).setPreferredWidth(130);
+        driverTable.getColumnModel().getColumn(0).setMinWidth(130);
+        driverTable.getColumnModel().getColumn(1).setPreferredWidth(180);
+        driverTable.getColumnModel().getColumn(1).setMinWidth(180);
+        driverTable.getColumnModel().getColumn(2).setPreferredWidth(70);
+        driverTable.getColumnModel().getColumn(2).setMinWidth(70);
+        driverTable.getColumnModel().getColumn(3).setPreferredWidth(70);
+        driverTable.getColumnModel().getColumn(3).setMinWidth(70);
+        driverTable.getColumnModel().getColumn(4).setPreferredWidth(90);
+        driverTable.getColumnModel().getColumn(4).setMinWidth(90);
+        driverTable.getColumnModel().getColumn(5).setPreferredWidth(60);
+        driverTable.getColumnModel().getColumn(5).setMinWidth(60);
+        
         JScrollPane driverScrollPane = new JScrollPane(driverTable);
         driverScrollPane.getViewport().setBackground(CLR_CARD_BG);
         driverScrollPane.setBackground(CLR_CARD_BG);
@@ -2887,6 +2908,25 @@ public class TaxiFinalApp extends JFrame {
                 return label;
             }
         });
+        
+        // Disable auto-resize to enable horizontal scrollbar and prevent truncation
+        ticketTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        
+        // Add margin between columns (side by side)
+        ticketTable.getColumnModel().setColumnMargin(10);
+        
+        // Set column widths and minimum widths to prevent truncation
+        ticketTable.getColumnModel().getColumn(0).setPreferredWidth(120);
+        ticketTable.getColumnModel().getColumn(0).setMinWidth(120);
+        ticketTable.getColumnModel().getColumn(1).setPreferredWidth(120);
+        ticketTable.getColumnModel().getColumn(1).setMinWidth(120);
+        ticketTable.getColumnModel().getColumn(2).setPreferredWidth(100);
+        ticketTable.getColumnModel().getColumn(2).setMinWidth(100);
+        ticketTable.getColumnModel().getColumn(3).setPreferredWidth(300);
+        ticketTable.getColumnModel().getColumn(3).setMinWidth(200);
+        ticketTable.getColumnModel().getColumn(4).setPreferredWidth(80);
+        ticketTable.getColumnModel().getColumn(4).setMinWidth(80);
+        
         JScrollPane ticketScrollPane = new JScrollPane(ticketTable);
         ticketScrollPane.getViewport().setBackground(CLR_CARD_BG);
         ticketScrollPane.setBackground(CLR_CARD_BG);
@@ -2980,6 +3020,38 @@ public class TaxiFinalApp extends JFrame {
                     t.getDescription(),
                     t.isResolved() ? "RESOLVED" : "OPEN"
             });
+        }
+        
+        // Auto-resize columns based on content
+        autoResizeColumns(driverTable);
+        autoResizeColumns(ticketTable);
+    }
+    
+    private void autoResizeColumns(JTable table) {
+        for (int column = 0; column < table.getColumnCount(); column++) {
+            javax.swing.table.TableColumn tableColumn = table.getColumnModel().getColumn(column);
+            int preferredWidth = tableColumn.getMinWidth();
+            int maxWidth = tableColumn.getMaxWidth();
+
+            // Check header width
+            javax.swing.table.TableCellRenderer headerRenderer = table.getTableHeader().getDefaultRenderer();
+            Component headerComp = headerRenderer.getTableCellRendererComponent(table, tableColumn.getHeaderValue(), false, false, 0, column);
+            preferredWidth = Math.max(preferredWidth, headerComp.getPreferredSize().width);
+
+            // Check rows width
+            for (int row = 0; row < table.getRowCount(); row++) {
+                javax.swing.table.TableCellRenderer cellRenderer = table.getCellRenderer(row, column);
+                Component c = table.prepareRenderer(cellRenderer, row, column);
+                int width = c.getPreferredSize().width + table.getIntercellSpacing().width;
+                preferredWidth = Math.max(preferredWidth, width);
+                
+                if (preferredWidth >= maxWidth) {
+                    preferredWidth = maxWidth;
+                    break;
+                }
+            }
+
+            tableColumn.setPreferredWidth(preferredWidth + 20); // Add a bit of padding
         }
     }
 

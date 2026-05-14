@@ -401,7 +401,7 @@ public class MapPickerDialog extends JDialog {
                     lat, lon);
             URL url = new URL(urlStr);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestProperty("User-Agent", "OrderAtaxiApp/1.0");
+            conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
             conn.setConnectTimeout(5000);
             conn.setReadTimeout(5000);
 

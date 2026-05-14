@@ -3,7 +3,8 @@ package pack;
 /**
  * RideService — Component Diagram: RideService
  * Activity Diagram: tam ride akışı (Request → Payment → Matching → Accept → Start → Complete)
- * State Machine: REQUESTED → ACCEPTED → IN_PROGRESS → COMPLETED / CANCELLED
+ * State Machine: REQUESTED → 
+ *ACCEPTED → IN_PROGRESS → COMPLETED / CANCELLED
  */
 public class RideService {
 

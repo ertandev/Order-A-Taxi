@@ -1184,6 +1184,14 @@ public class TaxiFinalApp extends JFrame {
                 }
                 super.setSelectedIndex(anIndex);
             }
+
+            @Override
+            public void setSelectedItem(Object anObject) {
+                if (anObject != null && anObject.toString().contains("[IN RIDE]")) {
+                    return;
+                }
+                super.setSelectedItem(anObject);
+            }
         };
         comboDrivers.setBackground(CLR_TAXI_YELLOW);
         comboDrivers.setForeground(Color.BLACK);
@@ -1199,6 +1207,14 @@ public class TaxiFinalApp extends JFrame {
                     }
                 }
                 super.setSelectedIndex(anIndex);
+            }
+
+            @Override
+            public void setSelectedItem(Object anObject) {
+                if (anObject != null && anObject.toString().contains("[IN RIDE]")) {
+                    return;
+                }
+                super.setSelectedItem(anObject);
             }
         };
         comboBackupDrivers.setBackground(CLR_TAXI_YELLOW);
@@ -1228,6 +1244,9 @@ public class TaxiFinalApp extends JFrame {
                 
                 if (value != null && value.toString().contains("[IN RIDE]")) {
                     c.setForeground(Color.GRAY);
+                    c.setEnabled(false);
+                } else {
+                    c.setEnabled(true);
                 }
                 
                 return c;
@@ -1235,6 +1254,23 @@ public class TaxiFinalApp extends JFrame {
         };
         comboDrivers.setRenderer(renderer);
         comboBackupDrivers.setRenderer(renderer);
+
+        JButton btnRequest = createModernButton("PROCEED TO PAYMENT", CLR_TAXI_YELLOW, CLR_TAXI_BLACK);
+        btnRequest.setEnabled(false); // Initially disabled
+        
+        Runnable updateProceedState = () -> {
+            boolean ok = true;
+            if (comboDrivers.getItemCount() == 0) ok = false;
+            int sIdx = comboDrivers.getSelectedIndex();
+            if (sIdx >= 0 && sIdx < currentAvailableDrivers.size()) {
+                if (!currentAvailableDrivers.get(sIdx).isAvailable()) {
+                    ok = false;
+                }
+            } else {
+                ok = false;
+            }
+            btnRequest.setEnabled(ok);
+        };
 
 
         
@@ -1251,6 +1287,7 @@ public class TaxiFinalApp extends JFrame {
                         comboBackupDrivers.addItem(itemText);
                     }
                 }
+                updateProceedState.run();
             }
         });
 
@@ -1658,12 +1695,15 @@ public class TaxiFinalApp extends JFrame {
                     }
                     lblPriceDetails.setText(String.format("\u23F2 ~%dmin    \uD83D\uDE95 %.1fkm", eta, route.getDistanceKm()));
                     pricePanel.setVisible(true);
+                    updateProceedState.run();
                 }
             });
             timer.start();
         });
 
         chkBackupDriver.addActionListener(e -> btnFind.doClick());
+        vehicleType.addActionListener(e -> btnFind.doClick());
+        timingCombo.addActionListener(e -> btnFind.doClick());
 
         comboDrivers.setMaximumSize(new Dimension(300, 40));
         comboBackupDrivers.setMaximumSize(new Dimension(300, 40));
@@ -1680,7 +1720,6 @@ public class TaxiFinalApp extends JFrame {
         actionPanel.add(Box.createVerticalStrut(5));
         actionPanel.add(comboBackupDrivers);
 
-        JButton btnRequest = createModernButton("PROCEED TO PAYMENT", CLR_TAXI_YELLOW, CLR_TAXI_BLACK);
         btnRequest.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         // --- STEP 4: PAYMENT (NEW) ---

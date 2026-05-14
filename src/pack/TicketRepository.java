@@ -21,7 +21,7 @@ public class TicketRepository {
     // ── SAVE ─────────────────────────────────────────────────────────────────
     public void save(SupportTicket ticket) {
         String sql = """
-            INSERT OR REPLACE INTO support_tickets
+            REPLACE INTO support_tickets
                 (id, user_id, driver_id, type, description, is_resolved, created_at)
             VALUES (?,?,?,?,?,?,?)
         """;

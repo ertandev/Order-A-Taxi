@@ -23,8 +23,6 @@ import java.net.HttpURLConnection;
 import java.util.*;
 
 /**
- * MapPickerDialog — Google Maps benzeri konum seçici.
- * - OpenStreetMap tile'ları (ücretsiz, API key gerekmez)
  * - IP geolocation ile başlangıç konumu
  * - 1. tıklama: Yeşil marker = Pickup
  * - 2. tıklama: Kırmızı marker = Destination

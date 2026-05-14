@@ -21,7 +21,7 @@ public class RideRepository {
     // ── SAVE (INSERT OR REPLACE) ──────────────────────────────────────────────
     public void save(Ride ride) {
         String sql = """
-            INSERT OR REPLACE INTO rides
+            REPLACE INTO rides
                 (id, passenger_id, driver_id, start_loc, end_loc, vehicle_type,
                  status, distance_km, fare_amount, estimated_minutes,
                  pickup_lat, pickup_lon, pickup_addr,

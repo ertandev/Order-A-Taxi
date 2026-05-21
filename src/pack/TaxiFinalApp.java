@@ -1184,6 +1184,14 @@ public class TaxiFinalApp extends JFrame {
                 }
                 super.setSelectedIndex(anIndex);
             }
+
+            @Override
+            public void setSelectedItem(Object anObject) {
+                if (anObject != null && anObject.toString().contains("[IN RIDE]")) {
+                    return;
+                }
+                super.setSelectedItem(anObject);
+            }
         };
         comboDrivers.setBackground(CLR_TAXI_YELLOW);
         comboDrivers.setForeground(Color.BLACK);
@@ -1199,6 +1207,14 @@ public class TaxiFinalApp extends JFrame {
                     }
                 }
                 super.setSelectedIndex(anIndex);
+            }
+
+            @Override
+            public void setSelectedItem(Object anObject) {
+                if (anObject != null && anObject.toString().contains("[IN RIDE]")) {
+                    return;
+                }
+                super.setSelectedItem(anObject);
             }
         };
         comboBackupDrivers.setBackground(CLR_TAXI_YELLOW);
@@ -1227,7 +1243,7 @@ public class TaxiFinalApp extends JFrame {
                 }
                 
                 if (value != null && value.toString().contains("[IN RIDE]")) {
-                    c.setForeground(Color.GRAY);
+                    c.setForeground(new Color(128, 128, 128));
                 }
                 
                 return c;
@@ -1235,6 +1251,23 @@ public class TaxiFinalApp extends JFrame {
         };
         comboDrivers.setRenderer(renderer);
         comboBackupDrivers.setRenderer(renderer);
+
+        JButton btnRequest = createModernButton("PROCEED TO PAYMENT", CLR_TAXI_YELLOW, CLR_TAXI_BLACK);
+        btnRequest.setEnabled(false); // Initially disabled
+        
+        Runnable updateProceedState = () -> {
+            boolean ok = true;
+            if (comboDrivers.getItemCount() == 0) ok = false;
+            int sIdx = comboDrivers.getSelectedIndex();
+            if (sIdx >= 0 && sIdx < currentAvailableDrivers.size()) {
+                if (!currentAvailableDrivers.get(sIdx).isAvailable()) {
+                    ok = false;
+                }
+            } else {
+                ok = false;
+            }
+            btnRequest.setEnabled(ok);
+        };
 
 
         
@@ -1251,6 +1284,7 @@ public class TaxiFinalApp extends JFrame {
                         comboBackupDrivers.addItem(itemText);
                     }
                 }
+                updateProceedState.run();
             }
         });
 
@@ -1414,13 +1448,6 @@ public class TaxiFinalApp extends JFrame {
         s2Top.add(locForm);
 
         JButton btnNext2 = createModernButton("NEXT STEP", CLR_TAXI_YELLOW, CLR_TAXI_BLACK);
-        btnNext2.addActionListener(e -> {
-            if (from.getText().isEmpty() || to.getText().isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Please enter pickup and dropoff locations!");
-                return;
-            }
-            wizardLayout.show(wizardPanel, "STEP3");
-        });
         JPanel s2Bot = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         s2Bot.setBackground(CLR_BG);
         JButton btnBack1 = createModernButton("Back", CLR_CARD_BG, CLR_TAXI_YELLOW);
@@ -1645,6 +1672,18 @@ public class TaxiFinalApp extends JFrame {
                                 + (d.isAvailable() ? "" : " [IN RIDE]");
                         comboDrivers.addItem(itemText);
                     }
+                    
+                    // Auto select the first available driver if the top ones are busy
+                    int firstAvailableIdx = -1;
+                    for (int i = 0; i < currentAvailableDrivers.size(); i++) {
+                        if (currentAvailableDrivers.get(i).isAvailable()) {
+                            firstAvailableIdx = i;
+                            break;
+                        }
+                    }
+                    if (firstAvailableIdx != -1) {
+                        comboDrivers.setSelectedIndex(firstAvailableIdx);
+                    }
                     comboBackupDrivers.setVisible(chkBackupDriver.isSelected());
                     comboDrivers.setVisible(true);
 
@@ -1658,9 +1697,24 @@ public class TaxiFinalApp extends JFrame {
                     }
                     lblPriceDetails.setText(String.format("\u23F2 ~%dmin    \uD83D\uDE95 %.1fkm", eta, route.getDistanceKm()));
                     pricePanel.setVisible(true);
+                    updateProceedState.run();
                 }
             });
             timer.start();
+        });
+
+        chkBackupDriver.addActionListener(e -> btnFind.doClick());
+        vehicleType.addActionListener(e -> btnFind.doClick());
+        timingCombo.addActionListener(e -> btnFind.doClick());
+
+        btnNext2.addActionListener(e -> {
+            if (from.getText().isEmpty() || to.getText().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Please enter pickup and dropoff locations!");
+                return;
+            }
+            wizardLayout.show(wizardPanel, "STEP3");
+            manager.getAllDrivers(); // Refresh drivers from DB
+            btnFind.doClick(); // Automatically trigger price and driver check!
         });
 
         comboDrivers.setMaximumSize(new Dimension(300, 40));
@@ -1678,7 +1732,6 @@ public class TaxiFinalApp extends JFrame {
         actionPanel.add(Box.createVerticalStrut(5));
         actionPanel.add(comboBackupDrivers);
 
-        JButton btnRequest = createModernButton("PROCEED TO PAYMENT", CLR_TAXI_YELLOW, CLR_TAXI_BLACK);
         btnRequest.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         // --- STEP 4: PAYMENT (NEW) ---
@@ -2609,7 +2662,7 @@ public class TaxiFinalApp extends JFrame {
         JPanel driversPanel = new JPanel(new BorderLayout());
         driversPanel.setBackground(CLR_CARD_BG);
         driverTableModel = new DefaultTableModel(
-                new String[] { "Name", "Email", "Verified", "Banned", "Avg. Rating", "Votes" }, 0);
+                new String[] { "Name", "Email", "Verified", "Banned", "<html>Avg.<br>Rating</html>", "Votes" }, 0);
         driverTable = new JTable(driverTableModel);
         driverTable.setRowHeight(30);
         driverTable.setBackground(CLR_CARD_BG);
@@ -2637,6 +2690,27 @@ public class TaxiFinalApp extends JFrame {
                 return label;
             }
         });
+        
+        // Disable auto-resize to enable horizontal scrollbar and prevent truncation
+        driverTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        
+        // Add margin between columns (side by side)
+        driverTable.getColumnModel().setColumnMargin(10);
+        
+        // Set column widths and minimum widths to prevent truncation
+        driverTable.getColumnModel().getColumn(0).setPreferredWidth(130);
+        driverTable.getColumnModel().getColumn(0).setMinWidth(130);
+        driverTable.getColumnModel().getColumn(1).setPreferredWidth(180);
+        driverTable.getColumnModel().getColumn(1).setMinWidth(180);
+        driverTable.getColumnModel().getColumn(2).setPreferredWidth(70);
+        driverTable.getColumnModel().getColumn(2).setMinWidth(70);
+        driverTable.getColumnModel().getColumn(3).setPreferredWidth(70);
+        driverTable.getColumnModel().getColumn(3).setMinWidth(70);
+        driverTable.getColumnModel().getColumn(4).setPreferredWidth(90);
+        driverTable.getColumnModel().getColumn(4).setMinWidth(90);
+        driverTable.getColumnModel().getColumn(5).setPreferredWidth(60);
+        driverTable.getColumnModel().getColumn(5).setMinWidth(60);
+        
         JScrollPane driverScrollPane = new JScrollPane(driverTable);
         driverScrollPane.getViewport().setBackground(CLR_CARD_BG);
         driverScrollPane.setBackground(CLR_CARD_BG);
@@ -2834,6 +2908,25 @@ public class TaxiFinalApp extends JFrame {
                 return label;
             }
         });
+        
+        // Disable auto-resize to enable horizontal scrollbar and prevent truncation
+        ticketTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        
+        // Add margin between columns (side by side)
+        ticketTable.getColumnModel().setColumnMargin(10);
+        
+        // Set column widths and minimum widths to prevent truncation
+        ticketTable.getColumnModel().getColumn(0).setPreferredWidth(120);
+        ticketTable.getColumnModel().getColumn(0).setMinWidth(120);
+        ticketTable.getColumnModel().getColumn(1).setPreferredWidth(120);
+        ticketTable.getColumnModel().getColumn(1).setMinWidth(120);
+        ticketTable.getColumnModel().getColumn(2).setPreferredWidth(100);
+        ticketTable.getColumnModel().getColumn(2).setMinWidth(100);
+        ticketTable.getColumnModel().getColumn(3).setPreferredWidth(300);
+        ticketTable.getColumnModel().getColumn(3).setMinWidth(200);
+        ticketTable.getColumnModel().getColumn(4).setPreferredWidth(80);
+        ticketTable.getColumnModel().getColumn(4).setMinWidth(80);
+        
         JScrollPane ticketScrollPane = new JScrollPane(ticketTable);
         ticketScrollPane.getViewport().setBackground(CLR_CARD_BG);
         ticketScrollPane.setBackground(CLR_CARD_BG);
@@ -2927,6 +3020,38 @@ public class TaxiFinalApp extends JFrame {
                     t.getDescription(),
                     t.isResolved() ? "RESOLVED" : "OPEN"
             });
+        }
+        
+        // Auto-resize columns based on content
+        autoResizeColumns(driverTable);
+        autoResizeColumns(ticketTable);
+    }
+    
+    private void autoResizeColumns(JTable table) {
+        for (int column = 0; column < table.getColumnCount(); column++) {
+            javax.swing.table.TableColumn tableColumn = table.getColumnModel().getColumn(column);
+            int preferredWidth = tableColumn.getMinWidth();
+            int maxWidth = tableColumn.getMaxWidth();
+
+            // Check header width
+            javax.swing.table.TableCellRenderer headerRenderer = table.getTableHeader().getDefaultRenderer();
+            Component headerComp = headerRenderer.getTableCellRendererComponent(table, tableColumn.getHeaderValue(), false, false, 0, column);
+            preferredWidth = Math.max(preferredWidth, headerComp.getPreferredSize().width);
+
+            // Check rows width
+            for (int row = 0; row < table.getRowCount(); row++) {
+                javax.swing.table.TableCellRenderer cellRenderer = table.getCellRenderer(row, column);
+                Component c = table.prepareRenderer(cellRenderer, row, column);
+                int width = c.getPreferredSize().width + table.getIntercellSpacing().width;
+                preferredWidth = Math.max(preferredWidth, width);
+                
+                if (preferredWidth >= maxWidth) {
+                    preferredWidth = maxWidth;
+                    break;
+                }
+            }
+
+            tableColumn.setPreferredWidth(preferredWidth + 20); // Add a bit of padding
         }
     }
 
@@ -3689,7 +3814,7 @@ public class TaxiFinalApp extends JFrame {
                 histModel.addRow(new Object[] { "-", "No rides yet", "", "", "", "" });
         };
 
-        btnRefresh.addActionListener(e -> refresh.run());
+        btnRefresh.addActionListener(e -> showLoadingAnimation(p, refresh));
         btnBack.addActionListener(e -> cardLayout.show(mainPanel, "PASSENGER_HOME"));
 
         JPanel bottom = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
@@ -3704,6 +3829,91 @@ public class TaxiFinalApp extends JFrame {
                 refresh.run();
         });
         return p;
+    }
+
+    private void showLoadingAnimation(Component parent, Runnable onComplete) {
+        JDialog dlg = new JDialog(SwingUtilities.getWindowAncestor(parent), "Loading", java.awt.Dialog.ModalityType.APPLICATION_MODAL);
+        dlg.setUndecorated(true);
+        dlg.setSize(parent.getSize());
+        try {
+            dlg.setLocation(parent.getLocationOnScreen());
+        } catch (Exception e) {
+            dlg.setLocationRelativeTo(parent);
+        }
+        
+        JPanel container = new JPanel(new GridBagLayout());
+        container.setBackground(CLR_BG); // Use the same background color as the app
+        
+        JPanel roadPanel = new JPanel() {
+            private int roadOffset = 0;
+            private int taxiX = 50;
+            private javax.swing.Timer animTimer;
+
+            {
+                setOpaque(false); // Make panel transparent
+                setPreferredSize(new Dimension(350, 180));
+
+                animTimer = new javax.swing.Timer(50, e -> {
+                    roadOffset = (roadOffset + 8) % 40;
+                    repaint();
+                });
+                animTimer.start();
+            }
+
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g;
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                int w = getWidth();
+                int h = getHeight();
+
+                // Road lines
+                g2.setColor(CLR_TAXI_YELLOW);
+                g2.setStroke(new BasicStroke(3, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 0,
+                        new float[] { 20, 15 }, roadOffset));
+                g2.drawLine(0, h / 2 + 45, w, h / 2 + 45);
+
+                // Side road lines
+                g2.setColor(new Color(200, 200, 200));
+                g2.setStroke(new BasicStroke(2));
+                g2.drawLine(0, h / 2 + 15, w, h / 2 + 15);
+                g2.drawLine(0, h - 5, w, h - 5);
+
+                // Taxi car
+                int carY = h / 2 + 50;
+                g2.setColor(CLR_TAXI_YELLOW);
+                g2.fillRoundRect(taxiX, carY, 60, 25, 8, 8);
+                g2.fillRoundRect(taxiX + 12, carY - 12, 35, 15, 6, 6);
+                g2.setColor(new Color(150, 200, 255));
+                g2.fillRect(taxiX + 15, carY - 9, 12, 10);
+                g2.fillRect(taxiX + 32, carY - 9, 12, 10);
+                g2.setColor(new Color(30, 30, 30));
+                g2.fillOval(taxiX + 8, carY + 18, 14, 14);
+                g2.fillOval(taxiX + 40, carY + 18, 14, 14);
+                g2.setColor(CLR_TAXI_BLACK);
+                g2.setFont(new Font(FONT_FAMILY, Font.BOLD, 8));
+                g2.drawString("TAXI", taxiX + 18, carY + 14);
+                
+                // Draw "Loading..." text
+                g2.setColor(Color.WHITE);
+                g2.setFont(new Font(FONT_FAMILY, Font.BOLD, 14));
+                g2.drawString("Refreshing...", 10, 25);
+            }
+        };
+        
+        container.add(roadPanel);
+        dlg.add(container);
+        
+        javax.swing.Timer closeTimer = new javax.swing.Timer(1500, e -> {
+            dlg.dispose();
+            onComplete.run();
+        });
+        closeTimer.setRepeats(false);
+        closeTimer.start();
+        
+        dlg.setVisible(true);
     }
 
     // â”€â”€ EARNINGS HISTORY (Driver â€” Use Case: "View Earnings History")

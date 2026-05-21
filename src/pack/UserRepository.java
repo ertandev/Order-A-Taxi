@@ -20,7 +20,7 @@ public class UserRepository {
     public void save(User user) {
         String role = user instanceof Admin ? "ADMIN" : "PASSENGER";
         String sql  = """
-            INSERT OR REPLACE INTO users (id, name, email, password, phone, role)
+            REPLACE INTO users (id, name, email, password, phone, role)
             VALUES (?, ?, ?, ?, ?, ?)
         """;
         try (PreparedStatement ps = conn.prepareStatement(sql)) {

@@ -209,6 +209,7 @@ public class TaxiManager {
     }
 
     public List<Driver> getAllDrivers() {
+        this.drivers = driverRepo.findAll();
         return drivers;
     }
 

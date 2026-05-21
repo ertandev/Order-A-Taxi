@@ -20,7 +20,7 @@ public class PaymentRepository {
     // ── SAVE ─────────────────────────────────────────────────────────────────
     public void save(Payment payment, String rideId) {
         String sql = """
-            INSERT OR REPLACE INTO payments
+            REPLACE INTO payments
                 (id, ride_id, amount, method, is_paid, transaction_id, paid_at)
             VALUES (?,?,?,?,?,?,?)
         """;

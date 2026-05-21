@@ -19,7 +19,7 @@ public class DriverRepository {
     // ── SAVE (INSERT OR REPLACE) ──────────────────────────────────────────────
     public void save(Driver d) {
         String sql = """
-            INSERT OR REPLACE INTO drivers
+            REPLACE INTO drivers
                 (id, name, email, password, phone, vehicle_model, plate_number,
                  service_type, is_verified, is_banned, is_available,
                  rating_sum, rating_count, avg_rating, status)

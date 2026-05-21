@@ -22,10 +22,8 @@ public class MapService {
         return !API_KEY.equals("YOUR_ORS_API_KEY") && !API_KEY.isBlank();
     }
 
-    // ── ANA METOT: getRoute ───────────────────────────────────────────────────
-    /**
-     * Sequence Diagram: getRoute(pickup, dropoff) → Route
-     * OpenRouteService çağrısı yapar; başarısız olursa Haversine fallback.
+    /*
+     OpenRouteService çağrısı yapar; başarısız olursa Haversine fallback.
      */
     public static Route getRoute(Location from, Location to) {
         return getRoute(from, to, java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY));
@@ -46,16 +44,18 @@ public class MapService {
             conn.setRequestMethod("GET");
             conn.setConnectTimeout(5000);
             conn.setReadTimeout(5000);
-            conn.setRequestProperty("Accept", "application/geo+json; charset=utf-8");
+            conn.setRequestProperty("Accept", "application/geo+json;charset=UTF-8");
 
-            int responseCode = conn.getResponseCode();
-            if (responseCode != 200) {
-                System.err.println("[MapService] ORS API Error " + responseCode);
-                // Print error message from server if possible
+            if (conn.getResponseCode() != 200) {
+                System.err.println("[MapService] ORS API error. Response Code: " + conn.getResponseCode());
                 try (BufferedReader br = new BufferedReader(new InputStreamReader(conn.getErrorStream()))) {
                     String line;
-                    while ((line = br.readLine()) != null) System.err.println("  > " + line);
-                } catch (Exception ignore) {}
+                    StringBuilder sb = new StringBuilder();
+                    while ((line = br.readLine()) != null) sb.append(line);
+                    System.err.println("[MapService] Error body: " + sb.toString());
+                } catch (Exception ex) {
+                    // Ignore
+                }
                 return fallbackRoute(from, to, hour);
             }
 

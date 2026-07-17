@@ -10,7 +10,7 @@ import java.net.URL;
 public class MapService {
 
     // openrouteservice.org'dan ücretsiz alınan API key buraya yazılır
-    private static String API_KEY = "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImM2ZmZlZTUwNzk5MzQ0OTdhZWU4NDA2ZWJhMGU1MzdiIiwiaCI6Im11cm11cjY0In0=";
+    private static String API_KEY = "YOUR_ORS_API_KEY";
     private static final String ORS_URL =
             "https://api.openrouteservice.org/v2/directions/driving-car";
 

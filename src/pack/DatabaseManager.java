@@ -10,7 +10,7 @@ public class DatabaseManager {
     // MySQL Bağlantı Bilgileri
     private static final String DB_URL = "jdbc:mysql://localhost:3306/";
     private static final String DB_USER = "root"; // Genelde root'tur
-    private static final String DB_PASS = "-Natre1257!"; 
+    private static final String DB_PASS = "YOUR_DATABASE_PASSWORD"; 
     private static DatabaseManager instance;
     private Connection connection;
 

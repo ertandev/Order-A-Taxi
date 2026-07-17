@@ -99,8 +99,7 @@ public class TaxiFinalApp extends JFrame {
         }
 
         // OpenRouteService API â€” gerÃ§ek yol mesafesi + ETA
-        MapService.setApiKey(
-                "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImM2ZmZlZTUwNzk5MzQ0OTdhZWU4NDA2ZWJhMGU1MzdiIiwiaCI6Im11cm11cjY0In0=");
+        MapService.setApiKey("YOUR_ORS_API_KEY");
 
         // Add Panels
         mainPanel.add(createLoginPanel(), "LOGIN");

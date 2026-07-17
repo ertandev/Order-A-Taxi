@@ -224,7 +224,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES ('7a3c5a2b-b986-4af3-93b0-b96f089c2569','Test Passenger','test','123','555-0000','PASSENGER'),('f624558a-9c8c-42ec-ba60-c9c6876d6d69','Ertan','ertanyolcu1@gmail.com','--!','+90 546 585 68 48','PASSENGER');
+INSERT INTO `users` VALUES ('7a3c5a2b-b986-4af3-93b0-b96f089c2569','Test Passenger','test','123','555-0000','PASSENGER'),('f624558a-9c8c-42ec-ba60-c9c6876d6d69','Ertan','ertanyolcu1@example.com','123','+90 555 555 55 55','PASSENGER');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;

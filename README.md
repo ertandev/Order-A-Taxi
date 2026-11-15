@@ -1,10 +1,10 @@
-# <img src="https://api.iconify.design/lucide:car.svg?color=%23fbbf24" width="28" height="28" align="center" /> Order A Taxi
+# <img src="https://api.iconify.design/lucide/car.svg?color=%23fbbf24" width="28" height="28" align="center" /> Order A Taxi
 
 **Order A Taxi** is a feature-rich desktop taxi booking and management application built with **Java Swing** and backed by a **MySQL** database (with legacy support for **SQLite**). The project provides an end-to-end simulation of a ride-hailing service, featuring three distinct portals: Passenger, Driver, and Admin.
 
 ---
 
-## <img src="https://api.iconify.design/lucide:graduation-cap.svg?color=%23818cf8" width="20" height="20" align="center" /> Academic Purpose & Context
+## <img src="https://api.iconify.design/lucide/graduation-cap.svg?color=%23818cf8" width="20" height="20" align="center" /> Academic Purpose & Context
 
 This project was developed as a **university school project** for educational purposes. The primary goal was to apply software engineering principles, layered architecture (Service-Repository pattern), and Relational Database Management Systems (RDBMS) in a real-world scenario. Key areas of focus include:
 - Object-Oriented Programming (OOP) concepts and design patterns (Singleton, Service Locator, Repository, etc.).
@@ -16,7 +16,7 @@ This project was developed as a **university school project** for educational pu
 
 ---
 
-## <img src="https://api.iconify.design/lucide:layers.svg?color=%23a78bfa" width="20" height="20" align="center" /> Software Architecture
+## <img src="https://api.iconify.design/lucide/layers.svg?color=%23a78bfa" width="20" height="20" align="center" /> Software Architecture
 
 The application is structured following the **Layered Architecture (Service-Repository Pattern)** principles to ensure clean separation of concerns:
 
@@ -35,9 +35,9 @@ graph TD
 
 ---
 
-## <img src="https://api.iconify.design/lucide:sparkles.svg?color=%23818cf8" width="20" height="20" align="center" /> Core Features
+## <img src="https://api.iconify.design/lucide/sparkles.svg?color=%23818cf8" width="20" height="20" align="center" /> Core Features
 
-### <img src="https://api.iconify.design/lucide:user.svg?color=%2338bdf8" width="18" height="18" align="center" /> Passenger Portal
+### <img src="https://api.iconify.design/lucide/user.svg?color=%2338bdf8" width="18" height="18" align="center" /> Passenger Portal
 * **Interactive Booking Wizard:** Route planning via map picking (using `JMapViewer`) or manual address entry.
 * **Scheduled Trips:** Ride booking for a future date/time using `TimePickerDialog` and custom calendar tools.
 * **Dynamic Fare Estimation:** Calculates fares on the fly based on route distance, vehicle type (Economy, Premium, XL), and traffic conditions.
@@ -45,19 +45,19 @@ graph TD
 * **Ride History & Rating:** View completed trips, rate drivers, and leave comments.
 * **Customer Support System:** File tickets for lost items or driver issues.
 
-### <img src="https://api.iconify.design/lucide:car.svg?color=%23fbbf24" width="18" height="18" align="center" /> Driver Dashboard
+### <img src="https://api.iconify.design/lucide/car.svg?color=%23fbbf24" width="18" height="18" align="center" /> Driver Dashboard
 * **Ride Request Queue:** View, accept, or reject incoming requests.
 * **Ride Simulation:** A step-by-step progress tracking simulator that automatically resets driver status to "Available" when the journey completes.
 * **Earnings & History Tracker:** Detailed reports and statistics of daily/monthly earnings and job history.
 
-### <img src="https://api.iconify.design/lucide:shield-check.svg?color=%2334d399" width="18" height="18" align="center" /> Admin Panel
+### <img src="https://api.iconify.design/lucide/shield-check.svg?color=%2334d399" width="18" height="18" align="center" /> Admin Panel
 * **Driver Approvals:** Review pending driver documents and verify/ban them.
 * **System Metrics:** Monitor system-wide revenue, total users/drivers, and active rides.
 * **Support Desk:** Read and resolve incoming passenger support tickets.
 
 ---
 
-## <img src="https://api.iconify.design/lucide:cpu.svg?color=%23a78bfa" width="20" height="20" align="center" /> Technology Stack
+## <img src="https://api.iconify.design/lucide/cpu.svg?color=%23a78bfa" width="20" height="20" align="center" /> Technology Stack
 
 * **Language:** Java 17+
 * **UI:** Java Swing (with custom styling and map integrations)
@@ -70,7 +70,7 @@ graph TD
 
 ---
 
-## <img src="https://api.iconify.design/lucide:package.svg?color=%2338bdf8" width="20" height="20" align="center" /> Setup & Execution
+## <img src="https://api.iconify.design/lucide/package.svg?color=%2338bdf8" width="20" height="20" align="center" /> Setup & Execution
 
 ### 1. Database Configuration
 1. Start your local MySQL server.
@@ -116,7 +116,7 @@ java -cp "bin:lib/*:resources" pack.TaxiFinalApp
 
 ---
 
-## <img src="https://api.iconify.design/lucide:key.svg?color=%23fbbf24" width="20" height="20" align="center" /> Demo Accounts (Credentials)
+## <img src="https://api.iconify.design/lucide/key.svg?color=%23fbbf24" width="20" height="20" align="center" /> Demo Accounts (Credentials)
 
 * **Passenger:** Register a new account via the UI.
 * **Driver:** `driver` / `123`
@@ -124,7 +124,7 @@ java -cp "bin:lib/*:resources" pack.TaxiFinalApp
 
 ---
 
-## <img src="https://api.iconify.design/lucide:file-text.svg?color=%2394a3b8" width="20" height="20" align="center" /> License
+## <img src="https://api.iconify.design/lucide/file-text.svg?color=%2394a3b8" width="20" height="20" align="center" /> License
 
 This project is licensed under the [MIT License](LICENSE). See the `LICENSE` file for more details.
 
